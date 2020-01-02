@@ -1,4 +1,4 @@
-{ reflex-platform ? import ./nix/reflex-platform.nix, compiler ? "ghcjs" }:
+{ reflex-platform ? import ./nix/reflex-platform.nix }:
 
 let pkgs = reflex-platform.nixpkgs;
 in reflex-platform.project (_: {
@@ -13,7 +13,7 @@ in reflex-platform.project (_: {
       acc // {
         ${broken-test-pkg} =
           pkgs.haskell.lib.dontCheck super.${broken-test-pkg};
-      }) { } [
+      }) { hpack = pkgs.haskellPackages.hpack; } [
         "Glob"
         "hourglass"
         "unliftio"
@@ -23,7 +23,6 @@ in reflex-platform.project (_: {
         "mono-traversable"
         "conduit"
         "yaml"
-        "hpack"
         "reflex-dom-core"
         "reflex-dom"
         "SHA"
