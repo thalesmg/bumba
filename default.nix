@@ -13,7 +13,7 @@ in reflex-platform.project (_: {
       acc // {
         ${broken-test-pkg} =
           pkgs.haskell.lib.dontCheck super.${broken-test-pkg};
-      }) { hpack = pkgs.haskellPackages.hpack; } [
+      }) { } [
         "Glob"
         "hourglass"
         "unliftio"
