@@ -1,4 +1,4 @@
-{ reflex-platform ? import ./nix/reflex-platform.nix, compiler ? "ghcjs" }:
+{ reflex-platform ? import ./nix/reflex-platform.nix }:
 
 let pkgs = reflex-platform.nixpkgs;
 in reflex-platform.project (_: {
@@ -23,7 +23,6 @@ in reflex-platform.project (_: {
         "mono-traversable"
         "conduit"
         "yaml"
-        "hpack"
         "reflex-dom-core"
         "reflex-dom"
         "SHA"
