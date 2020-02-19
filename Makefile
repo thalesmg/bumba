@@ -13,3 +13,8 @@ watch-dev:
 
 release:
 	nix-build release.nix
+
+gitlab-ci: .gitlab-ci.yml
+
+.gitlab-ci.yml: gitlab-ci.dhall
+	dhall-to-yaml --omit-empty < $< > $@
