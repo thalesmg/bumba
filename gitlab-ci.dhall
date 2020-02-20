@@ -8,9 +8,9 @@ let showStage =
 
 let siteAppId = "06890b1e-d940-4c61-b50c-59c6b3344838"
 
-let distDir = "./dist/"
+let distDir = "\$CI_PROJECT_DIR/dist/"
 
-let funsDir = "./fns/"
+let funsDir = "\$CI_PROJECT_DIR/fns/"
 
 let mkDeployForProd =
         λ(isProd : Bool)
@@ -50,8 +50,11 @@ in  { stages = List/map Stage Text showStage [ Stage.Build, Stage.Deploy ]
           , "nix-build release.nix"
           , "sleep 10"
           , "mkdir -p ${distDir}"
+          , "mkdir -p ${funsDir}"
           , "cp -r ./result/* ${distDir}"
+          , "cp -r ./fns/* ${funsDir}"
           ]
+        , cache = { key = "nix-cache", paths = [ "/nix/store" ] }
         }
     , `deploy:branch` = mkDeployForProd False
     , `deploy:prod` = mkDeployForProd True
