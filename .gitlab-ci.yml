@@ -31,6 +31,7 @@ deploy:branch:
     - build
   image: alpine:latest
   script:
+    - "ls -la $CI_PROJECT_DIR/fns/"
     - "dpl netlify --site 06890b1e-d940-4c61-b50c-59c6b3344838 --auth \"${NETLIFY_TOKEN}\" --dir $CI_PROJECT_DIR/dist/ --functions $CI_PROJECT_DIR/fns/ --no-prod"
   stage: deploy
 deploy:prod:
@@ -45,6 +46,7 @@ deploy:prod:
     refs:
       - master
   script:
+    - "ls -la $CI_PROJECT_DIR/fns/"
     - "dpl netlify --site 06890b1e-d940-4c61-b50c-59c6b3344838 --auth \"${NETLIFY_TOKEN}\" --dir $CI_PROJECT_DIR/dist/ --functions $CI_PROJECT_DIR/fns/ --prod"
   stage: deploy
 stages:

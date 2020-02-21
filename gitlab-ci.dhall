@@ -53,7 +53,8 @@ let mkDeployForProd =
 
                 else  None { refs : List Text }
             , script =
-              [ "dpl netlify --site ${siteAppId} --auth \"\${NETLIFY_TOKEN}\" --dir ${distDir} --functions ${funsDir} ${prodOpts}"
+              [ "ls -la ${funsDir}"
+              , "dpl netlify --site ${siteAppId} --auth \"\${NETLIFY_TOKEN}\" --dir ${distDir} --functions ${funsDir} ${prodOpts}"
               ]
             }
 
