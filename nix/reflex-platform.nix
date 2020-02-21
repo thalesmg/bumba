@@ -1,6 +1,6 @@
 # $ nix-prefetch-url --unpack https://github.com/reflex-frp/reflex-platform/archive/develop.zip
 let
-  baseNixpkgs = import <nixpkgs> {};
+  baseNixpkgs = import ./nixpkgs.nix;
   source = {
     reflex-platform = baseNixpkgs.fetchFromGitHub {
       owner = "reflex-frp";
