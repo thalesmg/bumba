@@ -12,12 +12,15 @@ let
           body {
             font-family: sans-serif;
           }
+          .gold {
+             color: gold;
+          }
           .darkest-blue {
             background-color: #181a26;
           }
         </style>
       </head>
-      <body class="darkest-blue">
+      <body class="darkest-blue gold">
       </body>
     </html>
   '';
