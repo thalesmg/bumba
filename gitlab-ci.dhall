@@ -12,12 +12,37 @@ let distDir = "\$CI_PROJECT_DIR/dist/"
 
 let funsDir = "\$CI_PROJECT_DIR/fns/"
 
+let build =
+      { stage = showStage Stage.Build
+      , image = "nixos/nix:latest"
+      , before_script =
+        [ "nix-env -iA cachix -f https://cachix.org/api/v1/install"
+        , "cachix use thalesmg"
+        , "apk add --no-cache git"
+        , "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org\" >> /etc/nix/nix.conf"
+        , "echo \"binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI=\" >> /etc/nix/nix.conf"
+        ]
+      , script =
+        [ "cachix push thalesmg --watch-store &"
+        , "nix-build release.nix"
+        , "sleep 10"
+        , "mkdir -p ${distDir}"
+        , "mkdir -p ${funsDir}"
+        , "cp -r ./result/* ${distDir}"
+        , "pwd"
+        , "ls -la"
+        ]
+      , artifacts = { paths = [ distDir, funsDir ] }
+      , cache = { key = "nix-cache", paths = [ "/nix/store/" ] }
+      }
+
 let mkDeployForProd =
         λ(isProd : Bool)
       → let prodOpts = if isProd then "--prod" else "--no-prod"
 
         in  { stage = showStage Stage.Deploy
             , image = "alpine:latest"
+            , dependencies = [ "build" ]
             , before_script =
               [ "apk add --no-cache ruby-dev npm"
               , "(cd fns && npm i)"
@@ -37,28 +62,7 @@ let mkDeployForProd =
             }
 
 in  { stages = List/map Stage Text showStage [ Stage.Build, Stage.Deploy ]
-    , build =
-        { stage = showStage Stage.Build
-        , image = "nixos/nix:latest"
-        , before_script =
-          [ "nix-env -iA cachix -f https://cachix.org/api/v1/install"
-          , "cachix use thalesmg"
-          , "apk add --no-cache git"
-          , "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org\" >> /etc/nix/nix.conf"
-          , "echo \"binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI=\" >> /etc/nix/nix.conf"
-          ]
-        , script =
-          [ "cachix push thalesmg --watch-store &"
-          , "nix-build release.nix"
-          , "sleep 10"
-          , "mkdir -p ${distDir}"
-          , "mkdir -p ${funsDir}"
-          , "cp -r ./result/* ${distDir}"
-          , "pwd"
-          , "ls -la"
-          ]
-        , cache = { key = "nix-cache", paths = [ "/nix/store" ] }
-        }
+    , build = build
     , `deploy:branch` = mkDeployForProd False
     , `deploy:prod` = mkDeployForProd True
     }

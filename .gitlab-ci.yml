@@ -1,4 +1,8 @@
 build:
+  artifacts:
+    paths:
+      - "$CI_PROJECT_DIR/dist/"
+      - "$CI_PROJECT_DIR/fns/"
   before_script:
     - "nix-env -iA cachix -f https://cachix.org/api/v1/install"
     - "cachix use thalesmg"
@@ -8,7 +12,7 @@ build:
   cache:
     key: nix-cache
     paths:
-      - /nix/store
+      - /nix/store/
   image: nixos/nix:latest
   script:
     - "cachix push thalesmg --watch-store &"
@@ -25,6 +29,8 @@ deploy:branch:
     - "apk add --no-cache ruby-dev npm"
     - "(cd fns && npm i)"
     - "gem install dpl --pre"
+  dependencies:
+    - build
   image: alpine:latest
   script:
     - pwd
@@ -36,6 +42,8 @@ deploy:prod:
     - "apk add --no-cache ruby-dev npm"
     - "(cd fns && npm i)"
     - "gem install dpl --pre"
+  dependencies:
+    - build
   image: alpine:latest
   only:
     refs:
