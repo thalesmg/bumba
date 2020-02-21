@@ -4,15 +4,14 @@ build:
       - "$CI_PROJECT_DIR/dist/"
       - "$CI_PROJECT_DIR/fns/"
   before_script:
+    - "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org https://cache.dhall-lang.org https://thalesmg.cachix.org\nbinary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= cache.dhall-lang.org:I9/H18WHd60olG5GsIjolp7CtepSgJmM2CsO813VTmM= thalesmg.cachix.org-1:1kJkwCK80VMItmlefyjnAvnrTG/X4tnr6lBjA5LTO7E=\nbinary-caches-parallel-connections = 40\nsandbox = false\nstore = /cache/\n\" > /etc/nix/nix.conf"
     - "nix-env -iA cachix -f https://cachix.org/api/v1/install"
     - "cachix use thalesmg"
     - "apk add --no-cache git"
-    - "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org https://cache.dhall-lang.org https://thalesmg.cachix.org\" >> /etc/nix/nix.conf"
-    - "echo \"binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= cache.dhall-lang.org:I9/H18WHd60olG5GsIjolp7CtepSgJmM2CsO813VTmM= thalesmg.cachix.org-1:1kJkwCK80VMItmlefyjnAvnrTG/X4tnr6lBjA5LTO7E=\" >> /etc/nix/nix.conf"
   cache:
     key: nix-cache
     paths:
-      - /nix/store/
+      - /cache/
   image: nixos/nix:latest
   script:
     - "cachix push thalesmg --watch-store &"
