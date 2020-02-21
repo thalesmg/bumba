@@ -12,15 +12,13 @@ let distDir = "\$CI_PROJECT_DIR/dist/"
 
 let funsDir = "\$CI_PROJECT_DIR/fns/"
 
-let cacheDir = "/cache/"
+let cacheDir = "/nix/store/"
 
 let nixConf =
       ''
-      binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org https://cache.dhall-lang.org https://thalesmg.cachix.org
-      binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= cache.dhall-lang.org:I9/H18WHd60olG5GsIjolp7CtepSgJmM2CsO813VTmM= thalesmg.cachix.org-1:1kJkwCK80VMItmlefyjnAvnrTG/X4tnr6lBjA5LTO7E=
-      binary-caches-parallel-connections = 40
+      binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org https://thalesmg.cachix.org
+      binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= thalesmg.cachix.org-1:1kJkwCK80VMItmlefyjnAvnrTG/X4tnr6lBjA5LTO7E=
       sandbox = false
-      store = ${cacheDir}
       ''
 
 let build =
