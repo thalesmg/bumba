@@ -30,7 +30,9 @@ let mkDeployForProd =
 
                 else  None { refs : List Text }
             , script =
-              [ "dpl netlify --site ${siteAppId} --auth \"\${NETLIFY_TOKEN}\" --dir ${distDir} --functions ${funsDir} ${prodOpts}"
+              [ "pwd"
+              , "ls -la"
+              , "dpl netlify --site ${siteAppId} --auth \"\${NETLIFY_TOKEN}\" --dir ${distDir} --functions ${funsDir} ${prodOpts}"
               ]
             }
 
@@ -52,7 +54,8 @@ in  { stages = List/map Stage Text showStage [ Stage.Build, Stage.Deploy ]
           , "mkdir -p ${distDir}"
           , "mkdir -p ${funsDir}"
           , "cp -r ./result/* ${distDir}"
-          , "cp -r ./fns/* ${funsDir}"
+          , "pwd"
+          , "ls -la"
           ]
         , cache = { key = "nix-cache", paths = [ "/nix/store" ] }
         }
