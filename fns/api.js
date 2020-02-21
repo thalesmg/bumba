@@ -1,6 +1,7 @@
 const requests = require("needle");
 
 exports.handler = function(event, context, callback) {
+    console.log(event.queryStringParameters);
     requests.request(
         "post",
         `http://api.olhovivo.sptrans.com.br/v2.1/Login/Autenticar?token=${process.env.API_TOKEN}`,
