@@ -1,0 +1,53 @@
+build:
+  artifacts:
+    paths:
+      - "$CI_PROJECT_DIR/dist/"
+      - "$CI_PROJECT_DIR/fns/"
+  before_script:
+    - "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org https://thalesmg.cachix.org\nbinary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= thalesmg.cachix.org-1:1kJkwCK80VMItmlefyjnAvnrTG/X4tnr6lBjA5LTO7E=\nsandbox = false\n\" > /etc/nix/nix.conf"
+    - "nix-env -iA cachix -f https://cachix.org/api/v1/install"
+    - "cachix use thalesmg"
+    - "apk add --no-cache git"
+  cache:
+    key: nix-cache
+    paths:
+      - /nix/store/
+  image: nixos/nix:latest
+  script:
+    - "cachix push thalesmg --watch-store &"
+    - "nix-build release.nix"
+    - "sleep 10"
+    - "mkdir -p $CI_PROJECT_DIR/dist/"
+    - "mkdir -p $CI_PROJECT_DIR/fns/"
+    - "cp -r ./result/* $CI_PROJECT_DIR/dist/"
+  stage: build
+deploy:branch:
+  before_script:
+    - "apk add --no-cache ruby-dev npm"
+    - "(cd $CI_PROJECT_DIR/fns/ && npm i)"
+    - "gem install dpl --pre"
+  dependencies:
+    - build
+  image: alpine:latest
+  script:
+    - "ls -la $CI_PROJECT_DIR/fns/"
+    - "dpl netlify --site 06890b1e-d940-4c61-b50c-59c6b3344838 --auth \"${NETLIFY_TOKEN}\" --dir $CI_PROJECT_DIR/dist/ --functions $CI_PROJECT_DIR/fns/ --no-prod"
+  stage: deploy
+deploy:prod:
+  before_script:
+    - "apk add --no-cache ruby-dev npm"
+    - "(cd $CI_PROJECT_DIR/fns/ && npm i)"
+    - "gem install dpl --pre"
+  dependencies:
+    - build
+  image: alpine:latest
+  only:
+    refs:
+      - master
+  script:
+    - "ls -la $CI_PROJECT_DIR/fns/"
+    - "dpl netlify --site 06890b1e-d940-4c61-b50c-59c6b3344838 --auth \"${NETLIFY_TOKEN}\" --dir $CI_PROJECT_DIR/dist/ --functions $CI_PROJECT_DIR/fns/ --prod"
+  stage: deploy
+stages:
+  - build
+  - deploy

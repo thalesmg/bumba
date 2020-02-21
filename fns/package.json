@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+        "needle": "^2.3.2"
+    }
+}
