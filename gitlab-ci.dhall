@@ -19,8 +19,8 @@ let build =
         [ "nix-env -iA cachix -f https://cachix.org/api/v1/install"
         , "cachix use thalesmg"
         , "apk add --no-cache git"
-        , "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org\" >> /etc/nix/nix.conf"
-        , "echo \"binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI=\" >> /etc/nix/nix.conf"
+        , "echo \"binary-caches = https://cache.nixos.org https://nixcache.reflex-frp.org https://cache.dhall-lang.org https://thalesmg.cachix.org\" >> /etc/nix/nix.conf"
+        , "echo \"binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= cache.dhall-lang.org:I9/H18WHd60olG5GsIjolp7CtepSgJmM2CsO813VTmM= thalesmg.cachix.org-1:1kJkwCK80VMItmlefyjnAvnrTG/X4tnr6lBjA5LTO7E=\" >> /etc/nix/nix.conf"
         ]
       , script =
         [ "cachix push thalesmg --watch-store &"
