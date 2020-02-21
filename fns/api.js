@@ -28,7 +28,7 @@ exports.handler = function(event, context, callback) {
                         } else {
                             callback(null, {
                                 statusCode: 200,
-                                body: res.body
+                                body: JSON.stringify(res.body)
                             });
                         }
                     }
