@@ -1,7 +1,7 @@
 const requests = require("needle");
 
 exports.handler = function(event, context, callback) {
-    console.log("aaaa", event.queryStringParameters);
+    cod = event.queryStringParameters.cod
     requests.request(
         "post",
         `http://api.olhovivo.sptrans.com.br/v2.1/Login/Autenticar?token=${process.env.API_TOKEN}`,
@@ -16,7 +16,7 @@ exports.handler = function(event, context, callback) {
             } else {
                 requests.request(
                     "get",
-                    `http://api.olhovivo.sptrans.com.br/v2.1/Previsao/Parada?codigoParada=630012906`,
+                    `http://api.olhovivo.sptrans.com.br/v2.1/Previsao/Parada?codigoParada=${cod}`,
                     "",
                     {json: true, cookies: res.cookies},
                     (error, res) => {
