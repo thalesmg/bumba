@@ -21,26 +21,22 @@ build:
     - "mkdir -p $CI_PROJECT_DIR/dist/"
     - "mkdir -p $CI_PROJECT_DIR/fns/"
     - "cp -r ./result/* $CI_PROJECT_DIR/dist/"
-    - pwd
-    - "ls -la"
   stage: build
 deploy:branch:
   before_script:
     - "apk add --no-cache ruby-dev npm"
-    - "(cd fns && npm i)"
+    - "(cd $CI_PROJECT_DIR/fns/ && npm i)"
     - "gem install dpl --pre"
   dependencies:
     - build
   image: alpine:latest
   script:
-    - pwd
-    - "ls -la"
     - "dpl netlify --site 06890b1e-d940-4c61-b50c-59c6b3344838 --auth \"${NETLIFY_TOKEN}\" --dir $CI_PROJECT_DIR/dist/ --functions $CI_PROJECT_DIR/fns/ --no-prod"
   stage: deploy
 deploy:prod:
   before_script:
     - "apk add --no-cache ruby-dev npm"
-    - "(cd fns && npm i)"
+    - "(cd $CI_PROJECT_DIR/fns/ && npm i)"
     - "gem install dpl --pre"
   dependencies:
     - build
@@ -49,8 +45,6 @@ deploy:prod:
     refs:
       - master
   script:
-    - pwd
-    - "ls -la"
     - "dpl netlify --site 06890b1e-d940-4c61-b50c-59c6b3344838 --auth \"${NETLIFY_TOKEN}\" --dir $CI_PROJECT_DIR/dist/ --functions $CI_PROJECT_DIR/fns/ --prod"
   stage: deploy
 stages:

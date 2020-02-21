@@ -60,7 +60,7 @@ buscarBumbas ::
   , MonadIO m
   )
   => Text -> Event t e -> m (Event t (Maybe Bumbas))
-buscarBumbas baseUrl e = getAndDecode (baseUrl <> "/api/630012906" <$ e)
+buscarBumbas baseUrl e = getAndDecode (baseUrl <> "/.netlify/functions/api?cod=630012906" <$ e)
 
 main :: IO ()
 main = do

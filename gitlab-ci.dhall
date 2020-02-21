@@ -29,8 +29,6 @@ let build =
         , "mkdir -p ${distDir}"
         , "mkdir -p ${funsDir}"
         , "cp -r ./result/* ${distDir}"
-        , "pwd"
-        , "ls -la"
         ]
       , artifacts = { paths = [ distDir, funsDir ] }
       , cache = { key = "nix-cache", paths = [ "/nix/store/" ] }
@@ -45,7 +43,7 @@ let mkDeployForProd =
             , dependencies = [ "build" ]
             , before_script =
               [ "apk add --no-cache ruby-dev npm"
-              , "(cd fns && npm i)"
+              , "(cd ${funsDir} && npm i)"
               , "gem install dpl --pre"
               ]
             , only =
@@ -55,9 +53,7 @@ let mkDeployForProd =
 
                 else  None { refs : List Text }
             , script =
-              [ "pwd"
-              , "ls -la"
-              , "dpl netlify --site ${siteAppId} --auth \"\${NETLIFY_TOKEN}\" --dir ${distDir} --functions ${funsDir} ${prodOpts}"
+              [ "dpl netlify --site ${siteAppId} --auth \"\${NETLIFY_TOKEN}\" --dir ${distDir} --functions ${funsDir} ${prodOpts}"
               ]
             }
 
