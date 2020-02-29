@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments      #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
@@ -66,12 +67,25 @@ main :: IO ()
 main = do
   now <- getCurrentTime
   baseUrl <- pack . fromMaybe "" <$> lookupEnv "BUMBA_URL"
-  mainWidget $ el "div" $ do
+  mainWidget $ el "div" $ mdo
     postbuild <- getPostBuild
-    eTick <- tickLossy 15 now
-    bumbas <- buscarBumbas baseUrl $ leftmost [() <$ eTick, postbuild]
+    eTick <- tickLossy 1 now
+    eCheck <- tickLossy 15 now
+    bumbas <- buscarBumbas baseUrl $ leftmost [() <$ eCheck, () <$ eRefresh, postbuild]
     texto <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
+    lastUpdate <- foldDyn ($) (0 :: Int)
+                  . mergeWith (.)$ [ (+1) <$ eTick
+                                   , const 0 <$ eCheck
+                                   , const 0 <$ eRefresh
+                                   ]
     let texto'' = fmap (map (pack . show)) texto
-    el "div" $ do
+    eRefresh <- el "div" $ do
       text "Próximos bumbas:"
       void $ el "ul" $ simpleList texto'' (el "li" . dynText)
+      el "p" $ do
+        text "Última atualização há "
+        display lastUpdate
+        dynText $ fmap (\n -> if n > 1 then " segundos" else " segundo") lastUpdate
+      (e, ()) <- elAttr' "p" ("style" =: "font-size: 4rem;") $ text "↺"
+      pure $ domEvent Click e
+    pure ()
