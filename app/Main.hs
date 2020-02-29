@@ -70,14 +70,16 @@ main = do
   mainWidget $ el "div" $ mdo
     postbuild <- getPostBuild
     eTick <- tickLossy 1 now
-    eCheck <- tickLossy 15 now
-    bumbas <- buscarBumbas baseUrl $ leftmost [() <$ eCheck, () <$ eRefresh, postbuild]
+    bumbas <- buscarBumbas baseUrl $ leftmost [ postbuild
+                                              , () <$ eRefresh
+                                              , () <$ eCheck
+                                              ]
     texto <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
     lastUpdate <- foldDyn ($) (0 :: Int)
-                  . mergeWith (.)$ [ (+1) <$ eTick
-                                   , const 0 <$ eCheck
-                                   , const 0 <$ eRefresh
-                                   ]
+                  . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
+                                    , const 0 <$ eRefresh
+                                    ]
+    let eCheck = ffilter (== 15) (updated lastUpdate)
     let texto'' = fmap (map (pack . show)) texto
     eRefresh <- el "div" $ do
       text "Próximos bumbas:"
