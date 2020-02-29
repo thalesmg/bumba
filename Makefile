@@ -1,4 +1,4 @@
-.PHONY: clean clean-all
+.PHONY: clean clean-all format
 clean: clean-all
 	nix-shell --run "hpack && cabal new-configure"
 
@@ -18,3 +18,6 @@ gitlab-ci: .gitlab-ci.yml
 
 .gitlab-ci.yml: gitlab-ci.dhall
 	dhall-to-yaml --omit-empty < $< > $@
+
+format:
+	nix-shell --run 'stylish-haskell -i **/*.hs'
