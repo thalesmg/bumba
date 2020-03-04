@@ -2,6 +2,6 @@
 }:
 
 let
-  project = import ./default.nix { };
+  project = import ./default.nix { inherit compiler; };
 in
   project.shells.${compiler}

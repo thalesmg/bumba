@@ -25,6 +25,7 @@ dependencies:
   - ghcjs-dom
   - time
   - aeson
+  - regex-tdfa
 
 executables:
   bumba:

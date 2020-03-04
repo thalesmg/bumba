@@ -23,6 +23,7 @@ import           Data.Time              (DiffTime, TimeOfDay, getCurrentTime)
 import           Data.Time.Format       (defaultTimeLocale, parseTimeM)
 import           Data.Time.LocalTime    (timeOfDayToTime)
 import           System.Environment     (lookupEnv)
+import Text.Regex.TDFA ((=~))
 
 data Bumba = Bumba Text Previsao deriving Show
 
@@ -34,6 +35,9 @@ instance Show Previsao where
   show prev =
     let mins = show @Int . truncate . (/ 60) . getPrevisao $ prev
     in mins <> " min"
+
+bumbaName :: Bumba -> Text
+bumbaName (Bumba name _) = name
 
 parseBumba :: A.Object -> Parser [(Text, TimeOfDay)]
 parseBumba b = do
@@ -74,7 +78,7 @@ main = do
                                               , () <$ eRefresh
                                               , () <$ eCheck
                                               ]
-    texto <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
+    texto <- holdDyn [] (fmap (maybe [] (filter ((=~ ("847P" :: Text)) . bumbaName) . getBumbas)) bumbas)
     lastUpdate <- foldDyn ($) (0 :: Int)
                   . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
                                     , const 0 <$ eRefresh
