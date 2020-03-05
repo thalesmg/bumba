@@ -17,6 +17,8 @@ import           Data.Aeson             ((.:))
 import qualified Data.Aeson             as A (FromJSON (..), Object, withObject)
 import           Data.Aeson.Types       (Parser)
 import           Data.List              (sortOn)
+-- import Data.Map (Map)
+-- import qualified Data.Map as M
 import           Data.Maybe             (fromMaybe)
 import           Data.Text              (Text, pack)
 import           Data.Time              (DiffTime, TimeOfDay, getCurrentTime)
@@ -67,6 +69,22 @@ buscarBumbas ::
   => Text -> Event t e -> m (Event t (Maybe Bumbas))
 buscarBumbas baseUrl e = getAndDecode (baseUrl <> "/.netlify/functions/api?cod=630012906" <$ e)
 
+-- filtros :: Map Text Text
+filtros =
+  [ ("VM -> Casa", "^847P")
+  ]
+
+seletorDeParadas ::
+  ( Reflex t
+  , DomBuilder t m
+  , Monad m
+  ) =>  m (SelectElement EventResult (DomBuilderSpace m) t, ())
+seletorDeParadas =
+  let
+     opts = do
+       elAttr "option" ("value" =: "VM -> Casa" <> "id" =: "630012906") $ text "VM -> Casa"
+  in selectElement (def {_selectElementConfig_initialValue = "VM -> Casa"}) opts
+
 main :: IO ()
 main = do
   now <- getCurrentTime
@@ -78,20 +96,25 @@ main = do
                                               , () <$ eRefresh
                                               , () <$ eCheck
                                               ]
-    texto <- holdDyn [] (fmap (maybe [] (filter ((=~ ("847P" :: Text)) . bumbaName) . getBumbas)) bumbas)
+    nomesBumbas' <- holdDyn [] (fmap (maybe [] (map bumbaName . getBumbas)) bumbas)
+    let texto = do
+          filtro <- dFiltro
+          filter (=~ filtro) <$> nomesBumbas'
     lastUpdate <- foldDyn ($) (0 :: Int)
                   . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
                                     , const 0 <$ eRefresh
                                     ]
     let eCheck = ffilter (== 15) (updated lastUpdate)
     let texto'' = fmap (map (pack . show)) texto
-    eRefresh <- el "div" $ do
-      text "Próximos bumbas:"
+    (eRefresh, dFiltro) <- el "div" $ do
+      (seletor, ()) <- seletorDeParadas
+      let dFiltro' = fromMaybe ("." :: Text) . flip lookup filtros <$> _selectElement_value seletor
+      el "p" $ text "Próximos bumbas:"
       void $ el "ul" $ simpleList texto'' (el "li" . dynText)
       el "p" $ do
         text "Última atualização há "
         display lastUpdate
         dynText $ fmap (\n -> if n > 1 then " segundos" else " segundo") lastUpdate
       (e, ()) <- elAttr' "p" ("style" =: "font-size: 4rem;") $ text "↺"
-      pure $ domEvent Click e
+      pure $ (domEvent Click e, dFiltro')
     pure ()
