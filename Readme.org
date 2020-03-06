@@ -1,1 +1,9 @@
 * bumba
+
+#+BEGIN_SRC sh
+make watch-dev BUMBA_PORT=5015
+#+END_SRC
+
+#+BEGIN_SRC sh
+make serve-release BUMBA_PORT=5015
+#+END_SRC

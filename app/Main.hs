@@ -69,7 +69,10 @@ buscarBumbas ::
   => Text -> Event t e -> m (Event t (Maybe Bumbas))
 buscarBumbas baseUrl e = getAndDecode (baseUrl <> "/.netlify/functions/api?cod=630012906" <$ e)
 
--- filtros :: Map Text Text
+mconcatMapM :: (Monad m, Monoid b) => (a -> m b) -> [a] -> m b
+mconcatMapM f = fmap mconcat . mapM f
+
+filtros :: [(Text, Text)]
 filtros =
   [ ("VM -> Casa", "^847P")
   ]
@@ -81,8 +84,7 @@ seletorDeParadas ::
   ) =>  m (SelectElement EventResult (DomBuilderSpace m) t, ())
 seletorDeParadas =
   let
-     opts = do
-       elAttr "option" ("value" =: "VM -> Casa" <> "id" =: "630012906") $ text "VM -> Casa"
+     opts = mconcatMapM (\(k, _) -> elAttr "option" ("value" =: k <> "id" =: "630012906") $ text k) filtros
   in selectElement (def {_selectElementConfig_initialValue = "VM -> Casa"}) opts
 
 main :: IO ()
@@ -96,10 +98,10 @@ main = do
                                               , () <$ eRefresh
                                               , () <$ eCheck
                                               ]
-    nomesBumbas' <- holdDyn [] (fmap (maybe [] (map bumbaName . getBumbas)) bumbas)
+    nomesBumbas' <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
     let texto = do
           filtro <- dFiltro
-          filter (=~ filtro) <$> nomesBumbas'
+          filter ((=~ filtro) . bumbaName) <$> nomesBumbas'
     lastUpdate <- foldDyn ($) (0 :: Int)
                   . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
                                     , const 0 <$ eRefresh
@@ -116,5 +118,5 @@ main = do
         display lastUpdate
         dynText $ fmap (\n -> if n > 1 then " segundos" else " segundo") lastUpdate
       (e, ()) <- elAttr' "p" ("style" =: "font-size: 4rem;") $ text "↺"
-      pure $ (domEvent Click e, dFiltro')
+      pure (domEvent Click e, dFiltro')
     pure ()
