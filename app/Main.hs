@@ -84,6 +84,7 @@ filtroDefault = MkFiltro {_filtroRegex = "^847P", _filtroCodigoParada = "6300129
 filtros :: [(Text, Filtro)]
 filtros =
   [ ("VM -> Casa", filtroDefault)
+  , ("AP -> Casa", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "70016918"})
   , ("Casa -> Trabalho", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "550011365"})
   ]
 
