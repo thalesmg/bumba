@@ -23,9 +23,9 @@ import           Data.Time              (DiffTime, TimeOfDay, getCurrentTime)
 import           Data.Time.Format       (defaultTimeLocale, parseTimeM)
 import           Data.Time.LocalTime    (timeOfDayToTime)
 import           System.Environment     (lookupEnv)
-import Text.Regex.TDFA ((=~))
+import           Text.Regex.TDFA        ((=~))
 
-data Filtro = MkFiltro { _filtroRegex :: Text
+data Filtro = MkFiltro { _filtroRegex        :: Text
                        , _filtroCodigoParada :: Text
                        }
 
@@ -84,6 +84,7 @@ filtroDefault = MkFiltro {_filtroRegex = "^847P", _filtroCodigoParada = "6300129
 filtros :: [(Text, Filtro)]
 filtros =
   [ ("VM -> Casa", filtroDefault)
+  , ("Casa -> Trabalho", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "550011365"})
   ]
 
 seletorDeParadas ::
@@ -106,6 +107,7 @@ main = do
     bumbas <- buscarBumbas baseUrl dFiltro $ leftmost [ postbuild
                                                       , () <$ eRefresh
                                                       , () <$ eCheck
+                                                      , () <$ updated dFiltro
                                                       ]
     nomesBumbas' <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
     let texto = do
@@ -114,6 +116,7 @@ main = do
     lastUpdate <- foldDyn ($) (0 :: Int)
                   . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
                                     , const 0 <$ eRefresh
+                                    , const 0 <$ updated dFiltro
                                     ]
     let eCheck = ffilter (== 15) (updated lastUpdate)
     let texto'' = fmap (map (pack . show)) texto
