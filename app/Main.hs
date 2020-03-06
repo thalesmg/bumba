@@ -17,8 +17,6 @@ import           Data.Aeson             ((.:))
 import qualified Data.Aeson             as A (FromJSON (..), Object, withObject)
 import           Data.Aeson.Types       (Parser)
 import           Data.List              (sortOn)
--- import Data.Map (Map)
--- import qualified Data.Map as M
 import           Data.Maybe             (fromMaybe)
 import           Data.Text              (Text, pack)
 import           Data.Time              (DiffTime, TimeOfDay, getCurrentTime)
@@ -26,6 +24,10 @@ import           Data.Time.Format       (defaultTimeLocale, parseTimeM)
 import           Data.Time.LocalTime    (timeOfDayToTime)
 import           System.Environment     (lookupEnv)
 import Text.Regex.TDFA ((=~))
+
+data Filtro = MkFiltro { _filtroRegex :: Text
+                       , _filtroCodigoParada :: Text
+                       }
 
 data Bumba = Bumba Text Previsao deriving Show
 
@@ -66,15 +68,22 @@ buscarBumbas ::
   , TriggerEvent t m
   , MonadIO m
   )
-  => Text -> Event t e -> m (Event t (Maybe Bumbas))
-buscarBumbas baseUrl e = getAndDecode (baseUrl <> "/.netlify/functions/api?cod=630012906" <$ e)
+  => Text -> Dynamic t Filtro -> Event t e -> m (Event t (Maybe Bumbas))
+buscarBumbas baseUrl dFiltro eCheck =
+  let
+    eFiltro = attachPromptlyDyn dFiltro eCheck
+    eUrl = (\(filtro, _) -> baseUrl <> "/.netlify/functions/api?cod=" <> _filtroCodigoParada filtro) <$> eFiltro
+  in getAndDecode eUrl
 
 mconcatMapM :: (Monad m, Monoid b) => (a -> m b) -> [a] -> m b
 mconcatMapM f = fmap mconcat . mapM f
 
-filtros :: [(Text, Text)]
+filtroDefault :: Filtro
+filtroDefault = MkFiltro {_filtroRegex = "^847P", _filtroCodigoParada = "630012906"}
+
+filtros :: [(Text, Filtro)]
 filtros =
-  [ ("VM -> Casa", "^847P")
+  [ ("VM -> Casa", filtroDefault)
   ]
 
 seletorDeParadas ::
@@ -84,7 +93,7 @@ seletorDeParadas ::
   ) =>  m (SelectElement EventResult (DomBuilderSpace m) t, ())
 seletorDeParadas =
   let
-     opts = mconcatMapM (\(k, _) -> elAttr "option" ("value" =: k <> "id" =: "630012906") $ text k) filtros
+     opts = mconcatMapM (\(k, filtro) -> elAttr "option" ("value" =: k <> "id" =: _filtroCodigoParada filtro) $ text k) filtros
   in selectElement (def {_selectElementConfig_initialValue = "VM -> Casa"}) opts
 
 main :: IO ()
@@ -94,14 +103,14 @@ main = do
   mainWidget $ el "div" $ mdo
     postbuild <- getPostBuild
     eTick <- tickLossy 1 now
-    bumbas <- buscarBumbas baseUrl $ leftmost [ postbuild
-                                              , () <$ eRefresh
-                                              , () <$ eCheck
-                                              ]
+    bumbas <- buscarBumbas baseUrl dFiltro $ leftmost [ postbuild
+                                                      , () <$ eRefresh
+                                                      , () <$ eCheck
+                                                      ]
     nomesBumbas' <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
     let texto = do
           filtro <- dFiltro
-          filter ((=~ filtro) . bumbaName) <$> nomesBumbas'
+          filter ((=~ _filtroRegex filtro) . bumbaName) <$> nomesBumbas'
     lastUpdate <- foldDyn ($) (0 :: Int)
                   . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
                                     , const 0 <$ eRefresh
@@ -110,7 +119,7 @@ main = do
     let texto'' = fmap (map (pack . show)) texto
     (eRefresh, dFiltro) <- el "div" $ do
       (seletor, ()) <- seletorDeParadas
-      let dFiltro' = fromMaybe ("." :: Text) . flip lookup filtros <$> _selectElement_value seletor
+      let dFiltro' = fromMaybe filtroDefault . flip lookup filtros <$> _selectElement_value seletor
       el "p" $ text "Próximos bumbas:"
       void $ el "ul" $ simpleList texto'' (el "li" . dynText)
       el "p" $ do
