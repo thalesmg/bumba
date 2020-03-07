@@ -23,7 +23,11 @@ import           Data.Time              (DiffTime, TimeOfDay, getCurrentTime)
 import           Data.Time.Format       (defaultTimeLocale, parseTimeM)
 import           Data.Time.LocalTime    (timeOfDayToTime)
 import           System.Environment     (lookupEnv)
-import Text.Regex.TDFA ((=~))
+import           Text.Regex.TDFA        ((=~))
+
+data Filtro = MkFiltro { _filtroRegex        :: Text
+                       , _filtroCodigoParada :: Text
+                       }
 
 data Bumba = Bumba Text Previsao deriving Show
 
@@ -64,8 +68,35 @@ buscarBumbas ::
   , TriggerEvent t m
   , MonadIO m
   )
-  => Text -> Event t e -> m (Event t (Maybe Bumbas))
-buscarBumbas baseUrl e = getAndDecode (baseUrl <> "/.netlify/functions/api?cod=630012906" <$ e)
+  => Text -> Dynamic t Filtro -> Event t e -> m (Event t (Maybe Bumbas))
+buscarBumbas baseUrl dFiltro eCheck =
+  let
+    eFiltro = attachPromptlyDyn dFiltro eCheck
+    eUrl = (\(filtro, _) -> baseUrl <> "/.netlify/functions/api?cod=" <> _filtroCodigoParada filtro) <$> eFiltro
+  in getAndDecode eUrl
+
+mconcatMapM :: (Monad m, Monoid b) => (a -> m b) -> [a] -> m b
+mconcatMapM f = fmap mconcat . mapM f
+
+filtroDefault :: Filtro
+filtroDefault = MkFiltro {_filtroRegex = "^847P", _filtroCodigoParada = "630012906"}
+
+filtros :: [(Text, Filtro)]
+filtros =
+  [ ("VM -> Casa", filtroDefault)
+  , ("AP -> Casa", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "260016919"})
+  , ("Casa -> Trabalho", MkFiltro {_filtroRegex = "^8700|^857[PR]|^775P", _filtroCodigoParada = "550011365"})
+  ]
+
+seletorDeParadas ::
+  ( Reflex t
+  , DomBuilder t m
+  , Monad m
+  ) =>  m (SelectElement EventResult (DomBuilderSpace m) t, ())
+seletorDeParadas =
+  let
+     opts = mconcatMapM (\(k, filtro) -> elAttr "option" ("value" =: k <> "id" =: _filtroCodigoParada filtro) $ text k) filtros
+  in selectElement (def {_selectElementConfig_initialValue = "VM -> Casa"}) opts
 
 main :: IO ()
 main = do
@@ -74,24 +105,31 @@ main = do
   mainWidget $ el "div" $ mdo
     postbuild <- getPostBuild
     eTick <- tickLossy 1 now
-    bumbas <- buscarBumbas baseUrl $ leftmost [ postbuild
-                                              , () <$ eRefresh
-                                              , () <$ eCheck
-                                              ]
-    texto <- holdDyn [] (fmap (maybe [] (filter ((=~ ("847P" :: Text)) . bumbaName) . getBumbas)) bumbas)
+    bumbas <- buscarBumbas baseUrl dFiltro $ leftmost [ postbuild
+                                                      , () <$ eRefresh
+                                                      , () <$ eCheck
+                                                      , () <$ updated dFiltro
+                                                      ]
+    nomesBumbas' <- holdDyn [] (fmap (maybe [] getBumbas) bumbas)
+    let texto = do
+          filtro <- dFiltro
+          filter ((=~ _filtroRegex filtro) . bumbaName) <$> nomesBumbas'
     lastUpdate <- foldDyn ($) (0 :: Int)
                   . mergeWith (.) $ [ (\t -> if t == 15 then 0 else t + 1) <$ eTick
                                     , const 0 <$ eRefresh
+                                    , const 0 <$ updated dFiltro
                                     ]
     let eCheck = ffilter (== 15) (updated lastUpdate)
     let texto'' = fmap (map (pack . show)) texto
-    eRefresh <- el "div" $ do
-      text "Próximos bumbas:"
+    (eRefresh, dFiltro) <- el "div" $ do
+      (seletor, ()) <- seletorDeParadas
+      let dFiltro' = fromMaybe filtroDefault . flip lookup filtros <$> _selectElement_value seletor
+      el "p" $ text "Próximos bumbas:"
       void $ el "ul" $ simpleList texto'' (el "li" . dynText)
       el "p" $ do
         text "Última atualização há "
         display lastUpdate
         dynText $ fmap (\n -> if n > 1 then " segundos" else " segundo") lastUpdate
       (e, ()) <- elAttr' "p" ("style" =: "font-size: 4rem;") $ text "↺"
-      pure $ domEvent Click e
+      pure (domEvent Click e, dFiltro')
     pure ()
