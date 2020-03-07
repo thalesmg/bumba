@@ -85,7 +85,7 @@ filtros :: [(Text, Filtro)]
 filtros =
   [ ("VM -> Casa", filtroDefault)
   , ("AP -> Casa", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "260016919"})
-  , ("Casa -> Trabalho", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "550011365"})
+  , ("Casa -> Trabalho", MkFiltro {_filtroRegex = "^8700|^857[PR]|^775P", _filtroCodigoParada = "550011365"})
   ]
 
 seletorDeParadas ::
