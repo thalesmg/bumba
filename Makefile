@@ -29,4 +29,4 @@ build-serve-release: release
 
 serve-release:
 	# FLASK_ENV=development is buggy! https://github.com/NixOS/nixpkgs/issues/42924
-	nix-shell -p 'with (import <nixpkgs> {}); python38.withPackages (ps: with ps; [python38 flask flask-cors requests])' --run 'env FLASK_APP=./app/main.py flask run -p $(BUMBA_PORT)'
+	nix-shell -p 'with (import <nixpkgs> {}); python38.withPackages (ps: with ps; [python38 flask flask-cors requests])' --run 'env FLASK_APP=./app/main.py FLASK_ENV=development python3 -m flask run -p $(BUMBA_PORT)'
