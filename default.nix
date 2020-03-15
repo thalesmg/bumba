@@ -17,6 +17,12 @@ in reflex-platform.project (_: {
 
   packages = { bumba = ./.; };
 
+  android.bumba = {
+    executableName = "bumba";
+    applicationId = "mg.thales.bumba";
+    displayName = "Bumba";
+  };
+
   overrides = self: super:
     let
       inherit (pkgs.lib.lists) fold;

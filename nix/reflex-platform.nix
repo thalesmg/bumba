@@ -5,10 +5,13 @@ let
     reflex-platform = baseNixpkgs.fetchFromGitHub {
       owner = "reflex-frp";
       repo = "reflex-platform";
-      rev = "1527ba413d21caf07f568d9630170845da48dc6b";
-      sha256 = "09mwhmdavs3pa5d30ahh1sfxfwpnggv9zaknv4ss37rp5jnf3006";
+      rev = "156ebb7c391ec909d19e794e591f107462862543";
+      sha256 = "0rvbaimcvcica80538i6vxckv8si1gbd1ynvgxv7zr5jd1gk6vi5";
     };
   };
-  reflex-platform = import source.reflex-platform { system = builtins.currentSystem; };
+  reflex-platform = import source.reflex-platform {
+    system = builtins.currentSystem;
+    config.android_sdk.accept_license = true;
+  };
 in
   reflex-platform

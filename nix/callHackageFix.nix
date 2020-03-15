@@ -30,7 +30,7 @@ let
       installPhase = ''
         export HOME="$TMP"
         mkdir -p "$out"
-        cabal2nix --compiler=${haskellPackages.ghc.name} --system=${pkgs.stdenv.system} ${sha256Arg} "${src}" > "$out/default.nix"
+        cabal2nix --compiler=${pkgs.ghc.haskellCompilerName} --system=${pkgs.stdenv.system} ${sha256Arg} "${src}" > "$out/default.nix"
       '';
     };
 
