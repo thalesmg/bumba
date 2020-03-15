@@ -16,7 +16,7 @@ import           Control.Monad.IO.Class (MonadIO)
 import           Data.Aeson             ((.:))
 import qualified Data.Aeson             as A (FromJSON (..), Object, withObject)
 import           Data.Aeson.Types       (Parser)
-import           Data.List              (sortOn)
+import           Data.List              (find, sortOn)
 import           Data.Maybe             (fromMaybe)
 import           Data.Text              (Text, pack)
 import           Data.Time              (DiffTime, TimeOfDay, getCurrentTime)
@@ -27,6 +27,7 @@ import           Text.Regex.TDFA        ((=~))
 
 data Filtro = MkFiltro { _filtroRegex        :: Text
                        , _filtroCodigoParada :: Text
+                       , _filtroLabel        :: Text
                        }
 
 data Bumba = Bumba Text Previsao deriving Show
@@ -79,13 +80,15 @@ mconcatMapM :: (Monad m, Monoid b) => (a -> m b) -> [a] -> m b
 mconcatMapM f = fmap mconcat . mapM f
 
 filtroDefault :: Filtro
-filtroDefault = MkFiltro {_filtroRegex = "^847P", _filtroCodigoParada = "630012906"}
+filtroDefault = MkFiltro {_filtroRegex = "^847P", _filtroCodigoParada = "630012906", _filtroLabel = "Madalena -> Casa"}
 
-filtros :: [(Text, Filtro)]
+filtros :: [Filtro]
 filtros =
-  [ ("VM -> Casa", filtroDefault)
-  , ("AP -> Casa", MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "260016919"})
-  , ("Casa -> Trabalho", MkFiltro {_filtroRegex = "^8700|^857[PR]|^775P", _filtroCodigoParada = "550011365"})
+  [ filtroDefault
+  , MkFiltro {_filtroRegex = ".", _filtroCodigoParada = "260016919", _filtroLabel = "Paulista -> Casa"}
+  , MkFiltro {_filtroRegex = "^8700|^857[PR]|^775P", _filtroCodigoParada = "550011365", _filtroLabel = "Casa -> Trabalho"}
+  , MkFiltro {_filtroRegex = "^8700|^857[PR]|^775P", _filtroCodigoParada = "630015011", _filtroLabel = "Faria Lima -> Casa"}
+  , MkFiltro {_filtroRegex = "^8700|^857[PR]|^775P|^809P", _filtroCodigoParada = "6311370", _filtroLabel = "Eldorado -> Casa"}
   ]
 
 seletorDeParadas ::
@@ -95,8 +98,10 @@ seletorDeParadas ::
   ) =>  m (SelectElement EventResult (DomBuilderSpace m) t, ())
 seletorDeParadas =
   let
-     opts = mconcatMapM (\(k, filtro) -> elAttr "option" ("value" =: k <> "id" =: _filtroCodigoParada filtro) $ text k) filtros
-  in selectElement (def {_selectElementConfig_initialValue = "VM -> Casa"}) opts
+     opts = mconcatMapM
+       (\filtro -> elAttr "option" ("value" =: _filtroLabel filtro <> "id" =: _filtroCodigoParada filtro) $ text (_filtroLabel filtro))
+       filtros
+  in selectElement (def {_selectElementConfig_initialValue = _filtroLabel filtroDefault}) opts
 
 main :: IO ()
 main = do
@@ -123,7 +128,7 @@ main = do
     let texto'' = fmap (map (pack . show)) texto
     (eRefresh, dFiltro) <- el "div" $ do
       (seletor, ()) <- seletorDeParadas
-      let dFiltro' = fromMaybe filtroDefault . flip lookup filtros <$> _selectElement_value seletor
+      let dFiltro' = fromMaybe filtroDefault . flip find filtros . (\label -> (==) label . _filtroLabel) <$> _selectElement_value seletor
       el "p" $ text "Próximos bumbas:"
       void $ el "ul" $ simpleList texto'' (el "li" . dynText)
       el "p" $ do
