@@ -24,7 +24,7 @@ let
       </body>
     </html>
   '';
-in pkgs.runCommand "glitch" {} ''
+in pkgs.runCommand "bumba-js" {} ''
   mkdir -p $out
   cp ${html} $out/index.html
   ${pkgs.closurecompiler}/bin/closure-compiler \
